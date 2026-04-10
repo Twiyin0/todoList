@@ -1,0 +1,21 @@
+{
+  "name": "upload",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "upload": "tsx upload.ts"
+  },
+  "dependencies": {
+    "archiver": "^7.0.1",
+    "dotenv": "^16.4.5",
+    "ssh2": "^1.15.0"
+  },
+  "devDependencies": {
+    "@types/archiver": "^6.0.2",
+    "@types/node": "^20.11.5",
+    "@types/ssh2": "^1.15.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3"
+  }
+}

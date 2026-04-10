@@ -1,0 +1,19 @@
+{
+  "name": "vue-todo-list",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"yarn workspace server dev --host 0.0.0.0\" \"yarn workspace client dev --host 0.0.0.0\"",
+    "build": "yarn workspace server build && yarn workspace client build",
+    "start": "yarn workspace server start",
+    "upload": "yarn workspace upload upload"
+  },
+  "workspaces": [
+    "server",
+    "client",
+    "upload"
+  ],
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

@@ -1,0 +1,15 @@
+node_modules/
+**/node_modules/
+dist/
+.yarn-cache/
+.yarnrc.yml
+.yarn
+yarn.lock
+.DS_Store
+package-lock.json
+.env
+*.log
+media/**
+data/**
+**/data/**
+
