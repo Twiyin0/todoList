@@ -10,8 +10,11 @@ export interface Todo {
   user_id: number
   title: string
   description: string | null
+  tag: string | null
   completed: boolean
   priority: number
+  notice_enabled: boolean
+  notice_time: number | null
   created_at: number
   updated_at: number
 }

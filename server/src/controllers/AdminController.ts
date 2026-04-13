@@ -4,56 +4,55 @@ import { Todo } from '../models/Todo'
 import { Document } from '../models/Document'
 
 export class AdminController {
-  static getStats(req: Request, res: Response): void {
-    const users = User.findAll()
-    const userCount = users.length
-    res.json({ userCount })
+  static async getStats(_req: Request, res: Response): Promise<void> {
+    const users = await User.findAll()
+    res.json({ userCount: users.length })
   }
 
-  static listUsers(req: Request, res: Response): void {
-    const users = User.findAll().map(u => u.toPublic())
+  static async listUsers(_req: Request, res: Response): Promise<void> {
+    const users = (await User.findAll()).map(u => u.toAdmin())
     res.json({ users })
   }
 
-  static createUser(req: Request, res: Response): void {
+  static async createUser(req: Request, res: Response): Promise<void> {
     const { username, password, email } = req.body
     if (!username || !password) {
       res.status(400).json({ error: 'Username and password required' })
       return
     }
-    if (User.findByUsername(username)) {
+    if (await User.findByUsername(username)) {
       res.status(409).json({ error: 'Username already exists' })
       return
     }
-    const user = User.create(username, password, email)
+    const user = await User.create(username, password, email)
     res.status(201).json({ user: user.toPublic() })
   }
 
-  static deleteUser(req: Request, res: Response): void {
+  static async deleteUser(req: Request, res: Response): Promise<void> {
     const id = parseInt(req.params.id)
-    const user = User.findById(id)
+    const user = await User.findById(id)
     if (!user) { res.status(404).json({ error: 'User not found' }); return }
-    User.deleteById(id)
+    await User.deleteById(id)
     res.json({ success: true })
   }
 
-  static updateUserPassword(req: Request, res: Response): void {
+  static async updateUserPassword(req: Request, res: Response): Promise<void> {
     const id = parseInt(req.params.id)
     const { password } = req.body
     if (!password) { res.status(400).json({ error: 'Password required' }); return }
-    const user = User.findById(id)
+    const user = await User.findById(id)
     if (!user) { res.status(404).json({ error: 'User not found' }); return }
-    User.updatePassword(id, password)
+    await User.updatePassword(id, password)
     res.json({ success: true })
   }
 
-  static getUserTodos(req: Request, res: Response): void {
+  static async getUserTodos(req: Request, res: Response): Promise<void> {
     const id = parseInt(req.params.id)
-    res.json({ todos: Todo.findByUser(id) })
+    res.json({ todos: await Todo.findByUser(id) })
   }
 
-  static getUserDocuments(req: Request, res: Response): void {
+  static async getUserDocuments(req: Request, res: Response): Promise<void> {
     const id = parseInt(req.params.id)
-    res.json({ documents: Document.findByUser(id) })
+    res.json({ documents: await Document.findByUser(id) })
   }
 }

@@ -11,8 +11,15 @@ export const useTodoStore = defineStore('todo', () => {
     todos.value = res.data.todos
   }
 
-  async function createTodo(title: string, description?: string, priority = 0) {
-    const res = await todoApi.create({ title, description, priority })
+  async function createTodo(
+    title: string,
+    description?: string,
+    priority = 0,
+    tag?: string,
+    noticeEnabled = false,
+    noticeTime?: number | null
+  ) {
+    const res = await todoApi.create({ title, description, priority, tag, notice_enabled: noticeEnabled, notice_time: noticeTime })
     todos.value.unshift(res.data.todo)
   }
 
@@ -22,7 +29,14 @@ export const useTodoStore = defineStore('todo', () => {
     if (idx !== -1) todos.value[idx] = res.data.todo
   }
 
-  async function updateTodo(id: number, data: Partial<{ title: string; description: string; priority: number }>) {
+  async function updateTodo(id: number, data: Partial<{
+    title: string
+    description: string
+    priority: number
+    tag: string
+    notice_enabled: boolean
+    notice_time: number | null
+  }>) {
     const res = await todoApi.update(id, data)
     const idx = todos.value.findIndex(t => t.id === id)
     if (idx !== -1) todos.value[idx] = res.data.todo

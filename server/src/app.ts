@@ -6,6 +6,7 @@ import todoRoutes from './routes/todos'
 import documentRoutes from './routes/documents'
 import mediaRoutes from './routes/media'
 import adminRoutes from './routes/admin'
+import externalRoutes from './routes/external'
 
 export function createApp() {
   const app = express()
@@ -19,13 +20,16 @@ export function createApp() {
   app.use('/api/documents', documentRoutes)
   app.use('/api/media', mediaRoutes)
   app.use('/api/admin', adminRoutes)
+  app.use('/api/external', externalRoutes)
 
-  // Serve built client in production
-  const clientDist = path.resolve(process.cwd(), '../client/dist')
-  app.use(express.static(clientDist))
-  app.get('*', (_req, res) => {
-    res.sendFile(path.join(clientDist, 'index.html'))
-  })
+  // Serve built client in production (local server only, not Vercel)
+  if (!process.env.VERCEL && process.env.NODE_ENV === 'production') {
+    const clientDist = path.resolve(__dirname, '../../client/dist')
+    app.use(express.static(clientDist))
+    app.get('*', (_req, res) => {
+      res.sendFile(path.join(clientDist, 'index.html'))
+    })
+  }
 
   return app
 }

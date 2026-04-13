@@ -6,6 +6,8 @@ export interface UserRow {
   username: string
   password: string
   email: string | null
+  register_ip: string | null
+  register_ua: string | null
   created_at: number
   updated_at: number
 }
@@ -15,6 +17,8 @@ export class User {
   username: string
   password: string
   email: string | null
+  register_ip: string | null
+  register_ua: string | null
   created_at: number
   updated_at: number
 
@@ -23,40 +27,43 @@ export class User {
     this.username = row.username
     this.password = row.password
     this.email = row.email
+    this.register_ip = row.register_ip
+    this.register_ua = row.register_ua
     this.created_at = row.created_at
     this.updated_at = row.updated_at
   }
 
-  static create(username: string, password: string, email?: string): User {
+  static async create(username: string, password: string, email?: string, registerIp?: string, registerUa?: string): Promise<User> {
     const hashed = md5(password)
-    const result = DB.run(
-      'INSERT INTO users (username, password, email) VALUES (?, ?, ?)',
-      [username, hashed, email ?? null]
+    const result = await DB.run(
+      'INSERT INTO users (username, password, email, register_ip, register_ua) VALUES (?, ?, ?, ?, ?)',
+      [username, hashed, email ?? null, registerIp ?? null, registerUa ?? null]
     )
-    return User.findById(result.lastInsertRowid as number)!
+    return (await User.findById(result.lastInsertRowid))!
   }
 
-  static findById(id: number): User | null {
-    const row = DB.get<UserRow>('SELECT * FROM users WHERE id = ?', [id])
+  static async findById(id: number): Promise<User | null> {
+    const row = await DB.get<UserRow>('SELECT * FROM users WHERE id = ?', [id])
     return row ? new User(row) : null
   }
 
-  static findByUsername(username: string): User | null {
-    const row = DB.get<UserRow>('SELECT * FROM users WHERE username = ?', [username])
+  static async findByUsername(username: string): Promise<User | null> {
+    const row = await DB.get<UserRow>('SELECT * FROM users WHERE username = ?', [username])
     return row ? new User(row) : null
   }
 
-  static findAll(): User[] {
-    return DB.all<UserRow>('SELECT * FROM users ORDER BY created_at DESC').map(r => new User(r))
+  static async findAll(): Promise<User[]> {
+    const rows = await DB.all<UserRow>('SELECT * FROM users ORDER BY created_at DESC')
+    return rows.map(r => new User(r))
   }
 
-  static deleteById(id: number): void {
-    DB.run('DELETE FROM users WHERE id = ?', [id])
+  static async deleteById(id: number): Promise<void> {
+    await DB.run('DELETE FROM users WHERE id = ?', [id])
   }
 
-  static updatePassword(id: number, password: string): void {
-    DB.run(
-      'UPDATE users SET password = ?, updated_at = strftime(\'%s\',\'now\') WHERE id = ?',
+  static async updatePassword(id: number, password: string): Promise<void> {
+    await DB.run(
+      "UPDATE users SET password = ?, updated_at = strftime('%s','now') WHERE id = ?",
       [md5(password), id]
     )
   }
@@ -67,5 +74,9 @@ export class User {
 
   toPublic() {
     return { id: this.id, username: this.username, email: this.email, created_at: this.created_at }
+  }
+
+  toAdmin() {
+    return { ...this.toPublic(), register_ip: this.register_ip, register_ua: this.register_ua }
   }
 }

@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(yarn vue-tsc:*)",
+      "Bash(node -e \"console.log\\(require\\('./node_modules/typescript/package.json'\\).version\\)\")"
+    ]
+  }
+}

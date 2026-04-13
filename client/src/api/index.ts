@@ -29,10 +29,24 @@ export const authApi = {
 
 export const todoApi = {
   list: () => api.get('/todos'),
-  create: (data: { title: string; description?: string; priority?: number }) =>
-    api.post('/todos', data),
-  update: (id: number, data: Partial<{ title: string; description: string; completed: boolean; priority: number }>) =>
-    api.put(`/todos/${id}`, data),
+  notifications: () => api.get('/todos/notifications'),
+  create: (data: {
+    title: string
+    description?: string
+    priority?: number
+    tag?: string
+    notice_enabled?: boolean
+    notice_time?: number | null
+  }) => api.post('/todos', data),
+  update: (id: number, data: Partial<{
+    title: string
+    description: string
+    completed: boolean
+    priority: number
+    type: string
+    notice_enabled: boolean
+    notice_time: number | null
+  }>) => api.put(`/todos/${id}`, data),
   remove: (id: number) => api.delete(`/todos/${id}`),
 }
 

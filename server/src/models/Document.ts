@@ -26,27 +26,32 @@ export class Document {
     this.updated_at = row.updated_at
   }
 
-  static create(userId: number, title = 'Untitled', content = ''): Document {
-    const result = DB.run(
+  static async create(userId: number, title = 'Untitled', content = ''): Promise<Document> {
+    const result = await DB.run(
       'INSERT INTO documents (user_id, title, content) VALUES (?, ?, ?)',
       [userId, title, content]
     )
-    return Document.findById(result.lastInsertRowid as number)!
+    return (await Document.findById(result.lastInsertRowid))!
   }
 
-  static findById(id: number): Document | null {
-    const row = DB.get<DocumentRow>('SELECT * FROM documents WHERE id = ?', [id])
+  static async findById(id: number): Promise<Document | null> {
+    const row = await DB.get<DocumentRow>('SELECT * FROM documents WHERE id = ?', [id])
     return row ? new Document(row) : null
   }
 
-  static findByUser(userId: number): Document[] {
-    return DB.all<DocumentRow>(
+  static async findByUser(userId: number): Promise<Document[]> {
+    const rows = await DB.all<DocumentRow>(
       'SELECT * FROM documents WHERE user_id = ? ORDER BY updated_at DESC',
       [userId]
-    ).map(r => new Document(r))
+    )
+    return rows.map(r => new Document(r))
   }
 
-  static update(id: number, userId: number, data: Partial<Pick<DocumentRow, 'title' | 'content'>>): Document | null {
+  static async update(
+    id: number,
+    userId: number,
+    data: Partial<Pick<DocumentRow, 'title' | 'content'>>
+  ): Promise<Document | null> {
     const fields: string[] = []
     const values: unknown[] = []
     if (data.title !== undefined) { fields.push('title = ?'); values.push(data.title) }
@@ -54,11 +59,11 @@ export class Document {
     if (!fields.length) return Document.findById(id)
     fields.push("updated_at = strftime('%s','now')")
     values.push(id, userId)
-    DB.run(`UPDATE documents SET ${fields.join(', ')} WHERE id = ? AND user_id = ?`, values)
+    await DB.run(`UPDATE documents SET ${fields.join(', ')} WHERE id = ? AND user_id = ?`, values)
     return Document.findById(id)
   }
 
-  static deleteById(id: number, userId: number): void {
-    DB.run('DELETE FROM documents WHERE id = ? AND user_id = ?', [id, userId])
+  static async deleteById(id: number, userId: number): Promise<void> {
+    await DB.run('DELETE FROM documents WHERE id = ? AND user_id = ?', [id, userId])
   }
 }

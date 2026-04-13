@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "buildCommand": "yarn workspace client build",
+  "devCommand": "yarn workspace client dev --port $PORT --host",
+  "outputDirectory": "client/dist",
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "/api/index.ts" },
+    { "source": "/:path*", "destination": "/index.html" }
+  ]
+}
