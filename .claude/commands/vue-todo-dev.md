@@ -5,20 +5,22 @@ description: Use when working on features, fixes, or extensions in the VueTodoLi
 
 # VueTodoList Project Reference
 
-Full-stack: Vue 3 + TypeScript + Express + SQLite (better-sqlite3) + Vditor markdown editor.
+Full-stack: Vue 3 + TypeScript + Express + libSQL (Turso/SQLite) + Vditor markdown editor.
 
 ## Project Structure
 
 ```
 VueTodoList/
-├── config.yml              # Runtime config (host/port/adminPassword/mediaPath)
+├── config.yml              # Local runtime config (host/port/adminPassword/mediaPath)
+├── api/index.ts            # Vercel serverless entry: runMigrations + Express handler
+├── vercel.json             # buildCommand + devCommand + rewrites
 ├── server/src/
-│   ├── index.ts            # Entry: runMigrations → listen
+│   ├── index.ts            # Local entry: runMigrations → listen on devPort/port
 │   ├── app.ts              # Express factory: all routes + static client/dist in prod
 │   ├── config.ts           # Loads via __dirname (NOT process.cwd())
 │   ├── database/
-│   │   ├── Database.ts     # Static DB class wrapping better-sqlite3
-│   │   └── migrations.ts   # Schema: users, todos, documents tables
+│   │   ├── Database.ts     # Static DB class wrapping @libsql/client; RunResult has rowsAffected (NOT changes)
+│   │   └── migrations.ts   # Schema: users, todos, documents; ALTER TABLE for additive migrations
 │   ├── models/             # User.ts / Todo.ts / Document.ts — OOP, scoped to user_id
 │   ├── controllers/        # AuthController, TodoController, DocumentController, MediaController, AdminController, ExternalController
 │   ├── middleware/
@@ -36,9 +38,36 @@ VueTodoList/
 ## Run
 
 ```bash
-yarn dev          # server :3300, Vite :5173 (proxy /api → 3300)
-yarn build && yarn start  # server :3303, serves client/dist
+yarn dev                  # server :3300, Vite :5173 (proxy /api → 3300)
+yarn build && yarn start  # server :3303, serves client/dist (NODE_ENV=production via cross-env)
+vercel --prod             # deploy to Vercel
 ```
+
+**`vercel dev` on Windows**: `$PORT` is not expanded by PowerShell — use `yarn dev` for local development instead.
+
+## Deployment (Vercel)
+
+- Frontend: CDN-hosted from `client/dist` (outputDirectory)
+- Backend: `api/index.ts` serverless function handles all `/api/*` routes
+- Static serving in `app.ts` is guarded by `!process.env.VERCEL` — not executed on Vercel
+- **Required env vars** in Vercel dashboard: `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`, `JWT_SECRET`
+- DB: uses Turso remote libSQL when `TURSO_DATABASE_URL` is set; falls back to local SQLite file
+
+## External API (`/api/external/*`)
+
+All routes use `POST` with `{"auth":{"username":"...","password":"..."},...}` — no JWT required.
+
+| Route | Body | Description |
+|-------|------|-------------|
+| `/todo/add` | `auth, todo{title,description?,priority?,tag?,noticetime?}` | Create todo; noticetime = ISO string or Unix ts |
+| `/todo/delete` | `auth, todoId, undoKeepTime?` | Soft delete; default keepDays=7 |
+| `/todo/undodelete` | `auth, todoId` | Restore; 200=Remain, 410=Expired, 404=NotFound |
+| `/todo/complete` | `auth, todoId` | Mark complete |
+| `/todo/listTodoList` | `auth, filter?{tag,completed,priority,keyword,includeDeleted}` | List todos |
+| `/todo/getTodo` | `auth, todoId` | Get single todo |
+| `/todo/todoStatus` | `auth, todoId, triggerNotice?` | Status; triggerNotice=true sets notice_time=now |
+| `/todo/updateTodo` | `auth, todoId, update{title?,description?,tag?,priority?,notice_enabled?,noticetime?}` | Update fields |
+| `/todo/notifications` | `auth` | Pending notice todos (notice_time ≤ now, not completed/deleted) |
 
 ## Key Patterns
 
@@ -50,8 +79,8 @@ yarn build && yarn start  # server :3303, serves client/dist
 5. `client/src/stores/` — update Pinia store
 
 ### Add model/table
-1. `migrations.ts` — `CREATE TABLE IF NOT EXISTS`
-2. `server/src/models/YourModel.ts` — use `DB.run/get/all`
+1. `migrations.ts` — `CREATE TABLE IF NOT EXISTS` in the batch; additive columns via `ALTER TABLE` in the try/catch loop
+2. `server/src/models/YourModel.ts` — use `DB.run/get/all`; check `result.rowsAffected` (not `result.changes`)
 3. Controller + route + register in `app.ts`
 
 ### Auth
@@ -69,9 +98,9 @@ yarn build && yarn start  # server :3303, serves client/dist
 ### Media uploads
 - Multer writes to `os.tmpdir()`, controller copies to `{mediaPath}/{userId}/{ts}_{safeName}`
 - Use `copyFileSync + unlinkSync` — **never `renameSync`** (cross-drive fails on Windows)
-- Size limit via `config.uploadFileSizeMax` (MB)
+- On Vercel: configure Upyun env vars (`UPYUN_BUCKET`, `UPYUN_OPERATOR`, `UPYUN_PASSWORD`, `UPYUN_DOMAIN`, `UPYUN_BASE_PATH`) for cloud storage
 
-## Config Reference
+## Config Reference (config.yml — local only)
 
 | Key | Default | Description |
 |-----|---------|-------------|
@@ -97,10 +126,14 @@ yarn build && yarn start  # server :3303, serves client/dist
 | Issue | Fix |
 |-------|-----|
 | Config/DB wrong path | Use `path.resolve(__dirname, '../../config.yml')`, not `process.cwd()` |
+| `client/dist` path in prod | `path.resolve(__dirname, '../../client/dist')` — compiled output is in `server/dist/` (no `src/` subdir) |
+| DB `RunResult` field | Use `result.rowsAffected`, NOT `result.changes` (wraps `@libsql/client`) |
+| Timestamp clock skew | Use JS `Math.floor(Date.now()/1000)` for all timestamps — never `strftime('%s','now')` in SQL (Turso server clock differs from local) |
 | File move fails cross-drive | `copyFileSync + unlinkSync`, never `renameSync` |
 | Vditor upload handler | Return `null`, not a JSON string |
 | vue-tsc version | Must be v2+ (v1 incompatible with TypeScript 5.9+) |
 | yarn setup | `.yarnrc.yml` with `nodeLinker: node-modules` + empty `yarn.lock` at root |
+| `yarn start` on Windows | Uses `cross-env NODE_ENV=production` — required for correct port and static file serving |
 
 ## Extension Points
 
