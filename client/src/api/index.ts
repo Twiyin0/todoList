@@ -68,6 +68,13 @@ export const mediaApi = {
   },
 }
 
+export const apiTokenApi = {
+  list: () => api.get('/apitoken'),
+  create: (data: { name: string; expires_at?: number | null }) =>
+    api.post('/apitoken', data),
+  remove: (id: number) => api.delete(`/apitoken/${id}`),
+}
+
 export const adminApi = {
   stats: (password: string) =>
     api.get('/admin/stats', { headers: { 'x-admin-password': password } }),

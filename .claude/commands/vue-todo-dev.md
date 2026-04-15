@@ -21,18 +21,18 @@ VueTodoList/
 │   ├── database/
 │   │   ├── Database.ts     # Static DB class wrapping @libsql/client; RunResult has rowsAffected (NOT changes)
 │   │   └── migrations.ts   # Schema: users, todos, documents; ALTER TABLE for additive migrations
-│   ├── models/             # User.ts / Todo.ts / Document.ts — OOP, scoped to user_id
-│   ├── controllers/        # AuthController, TodoController, DocumentController, MediaController, AdminController, ExternalController
+│   ├── models/             # User.ts / Todo.ts / Document.ts / ApiToken.ts — OOP, scoped to user_id
+│   ├── controllers/        # AuthController, TodoController, DocumentController, MediaController, AdminController, ExternalController, ApiTokenController
 │   ├── middleware/
 │   │   ├── auth.ts         # JWT Bearer, 7d expiry; signToken()
 │   │   └── admin.ts        # x-admin-password header, MD5 compare (case-insensitive)
-│   └── routes/             # auth, todos, documents, media, admin, external
+│   └── routes/             # auth, todos, documents, media, admin, external, apitoken
 └── client/src/
     ├── App.vue             # CSS variables for light/dark theme (data-theme attr)
     ├── stores/             # auth / todo / document / theme (Pinia)
     ├── api/index.ts        # Axios: auto Bearer token, redirect to /login on 401
     ├── router/index.ts     # meta.auth + meta.guest guards
-    └── views/              # Login, Register, Home, Editor, Admin
+    └── views/              # Login, Register, Home, Editor, Admin, ApiToken
 ```
 
 ## Run
@@ -55,7 +55,7 @@ vercel --prod             # deploy to Vercel
 
 ## External API (`/api/external/*`)
 
-All routes use `POST` with `{"auth":{"username":"...","password":"..."},...}` — no JWT required.
+All routes use `POST` with `{"auth":{"token":"..."},...}` — no JWT required. Token generated from the ApiToken management page (`/apitoken`). Expired tokens are auto-deleted on first use.
 
 | Route | Body | Description |
 |-------|------|-------------|
@@ -68,6 +68,14 @@ All routes use `POST` with `{"auth":{"username":"...","password":"..."},...}` �
 | `/todo/todoStatus` | `auth, todoId, triggerNotice?` | Status; triggerNotice=true sets notice_time=now |
 | `/todo/updateTodo` | `auth, todoId, update{title?,description?,tag?,priority?,notice_enabled?,noticetime?}` | Update fields |
 | `/todo/notifications` | `auth` | Pending notice todos (notice_time ≤ now, not completed/deleted) |
+
+### API Token management (`/api/apitoken` — requires JWT)
+
+| Method | Route | Description |
+|--------|-------|-------------|
+| GET | `/api/apitoken` | List all tokens for current user |
+| POST | `/api/apitoken` | Create token; body: `{name?, expires_at?}` (omit expires_at for no expiry) |
+| DELETE | `/api/apitoken/:id` | Delete token |
 
 ## Key Patterns
 

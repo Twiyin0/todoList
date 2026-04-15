@@ -1,12 +1,13 @@
 import { Request, Response } from 'express'
 import { User } from '../models/User'
 import { Todo } from '../models/Todo'
+import { ApiToken } from '../models/ApiToken'
 
-async function verifyAuth(username: string, password: string): Promise<User | null> {
-  if (!username || !password) return null
-  const user = await User.findByUsername(username)
-  if (!user || !user.verifyPassword(password)) return null
-  return user
+async function verifyAuth(auth: { token?: string }): Promise<User | null> {
+  if (!auth?.token) return null
+  const apiToken = await ApiToken.findByToken(auth.token)
+  if (!apiToken) return null
+  return User.findById(apiToken.user_id)
 }
 
 function undoRemainTime(deletedAt: number, keepDays: number): string {
@@ -40,7 +41,7 @@ export class ExternalController {
     if (!auth || !todo) {
       res.json({ code: 400, message: 'Missing auth or todo' }); return
     }
-    const user = await verifyAuth(auth.username, auth.password)
+    const user = await verifyAuth(auth)
     if (!user) {
       res.json({ code: 403, message: 'Invalid credentials' }); return
     }
@@ -81,7 +82,7 @@ export class ExternalController {
     if (!auth || !todoId) {
       res.json({ code: 400, message: 'Missing auth or todoId' }); return
     }
-    const user = await verifyAuth(auth.username, auth.password)
+    const user = await verifyAuth(auth)
     if (!user) {
       res.json({ code: 403, message: 'Invalid credentials' }); return
     }
@@ -103,7 +104,7 @@ export class ExternalController {
     if (!auth || !todoId) {
       res.json({ code: 400, message: 'Missing auth or todoId' }); return
     }
-    const user = await verifyAuth(auth.username, auth.password)
+    const user = await verifyAuth(auth)
     if (!user) {
       res.json({ code: 403, message: 'Invalid credentials' }); return
     }
@@ -128,7 +129,7 @@ export class ExternalController {
     if (!auth || !todoId) {
       res.json({ code: 400, message: 'Missing auth or todoId' }); return
     }
-    const user = await verifyAuth(auth.username, auth.password)
+    const user = await verifyAuth(auth)
     if (!user) {
       res.json({ code: 403, message: 'Invalid credentials' }); return
     }
@@ -161,7 +162,7 @@ export class ExternalController {
     if (!auth) {
       res.json({ code: 400, message: 'Missing auth' }); return
     }
-    const user = await verifyAuth(auth.username, auth.password)
+    const user = await verifyAuth(auth)
     if (!user) {
       res.json({ code: 403, message: 'Invalid credentials' }); return
     }
@@ -184,7 +185,7 @@ export class ExternalController {
     if (!auth || !todoId) {
       res.json({ code: 400, message: 'Missing auth or todoId' }); return
     }
-    const user = await verifyAuth(auth.username, auth.password)
+    const user = await verifyAuth(auth)
     if (!user) {
       res.json({ code: 403, message: 'Invalid credentials' }); return
     }
@@ -210,7 +211,7 @@ export class ExternalController {
     if (!auth || !todoId) {
       res.json({ code: 400, message: 'Missing auth or todoId' }); return
     }
-    const user = await verifyAuth(auth.username, auth.password)
+    const user = await verifyAuth(auth)
     if (!user) {
       res.json({ code: 403, message: 'Invalid credentials' }); return
     }
@@ -261,7 +262,7 @@ export class ExternalController {
     if (!auth || !todoId || !update) {
       res.json({ code: 400, message: 'Missing auth, todoId, or update' }); return
     }
-    const user = await verifyAuth(auth.username, auth.password)
+    const user = await verifyAuth(auth)
     if (!user) {
       res.json({ code: 403, message: 'Invalid credentials' }); return
     }
@@ -306,7 +307,7 @@ export class ExternalController {
     if (!auth) {
       res.json({ code: 400, message: 'Missing auth' }); return
     }
-    const user = await verifyAuth(auth.username, auth.password)
+    const user = await verifyAuth(auth)
     if (!user) {
       res.json({ code: 403, message: 'Invalid credentials' }); return
     }

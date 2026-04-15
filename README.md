@@ -6,7 +6,9 @@
 
 ## 外部 API 文档
 
-所有外部 API 路径以 `/api/external` 为前缀，使用用户名 + 密码（明文）进行鉴权，无需 JWT。
+所有外部 API 路径以 `/api/external` 为前缀，使用 **API Token** 进行鉴权，无需 JWT。
+
+Token 在登录后前往「API Token 管理」页面生成，支持设置过期时间或永不过期。Token 过期后服务端自动删除，需重新生成。
 
 ### 鉴权结构
 
@@ -15,8 +17,7 @@
 ```json
 {
   "auth": {
-    "username": "你的用户名",
-    "password": "你的密码"
+    "token": "你的 API Token"
   }
 }
 ```
@@ -40,7 +41,7 @@
 
 ```json
 {
-  "auth": { "username": "alice", "password": "mypassword" },
+  "auth": { "token": "1_1dkxhiy" },
   "todo": {
     "title": "完成报告",
     "description": "第三季度财务报告",
@@ -73,7 +74,7 @@
 
 ```json
 {
-  "auth": { "username": "alice", "password": "mypassword" },
+  "auth": { "token": "1_1dkxhiy" },
   "todoId": 42,
   "undoKeepTime": 7
 }
@@ -100,7 +101,7 @@
 
 ```json
 {
-  "auth": { "username": "alice", "password": "mypassword" },
+  "auth": { "token": "1_1dkxhiy" },
   "todoId": 42
 }
 ```
@@ -131,7 +132,7 @@
 
 ```json
 {
-  "auth": { "username": "alice", "password": "mypassword" },
+  "auth": { "token": "1_1dkxhiy" },
   "todoId": 42
 }
 ```
@@ -176,7 +177,7 @@
 
 ```json
 {
-  "auth": { "username": "alice", "password": "mypassword" },
+  "auth": { "token": "1_1dkxhiy" },
   "filter": {
     "tag": "工作",
     "completed": false,
@@ -229,7 +230,7 @@
 
 ```json
 {
-  "auth": { "username": "alice", "password": "mypassword" },
+  "auth": { "token": "1_1dkxhiy" },
   "todoId": 42
 }
 ```
@@ -250,7 +251,7 @@
 
 ```json
 {
-  "auth": { "username": "alice", "password": "mypassword" },
+  "auth": { "token": "1_1dkxhiy" },
   "todoId": 42,
   "triggerNotice": true
 }
@@ -299,7 +300,7 @@
 
 ```json
 {
-  "auth": { "username": "alice", "password": "mypassword" },
+  "auth": { "token": "1_1dkxhiy" },
   "todoId": 42,
   "update": {
     "title": "新标题",
@@ -339,7 +340,7 @@
 
 ```json
 {
-  "auth": { "username": "alice", "password": "mypassword" }
+  "auth": { "token": "1_1dkxhiy" }
 }
 ```
 
@@ -372,49 +373,49 @@
 curl -X POST https://your-domain.vercel.app/api/external/todo/add \
   -H "Content-Type: application/json" \
   -d '{
-    "auth": {"username":"alice","password":"123456"},
+    "auth": {"token":"1_1dkxhiy"},
     "todo": {"title":"买牛奶","tag":"生活","noticetime":"2025-08-01T08:00:00"}
   }'
 
 # 删除待办（保留 3 天可撤销）
 curl -X POST https://your-domain.vercel.app/api/external/todo/delete \
   -H "Content-Type: application/json" \
-  -d '{"auth":{"username":"alice","password":"123456"},"todoId":1,"undoKeepTime":3}'
+  -d '{"auth":{"token":"1_1dkxhiy"},"todoId":1,"undoKeepTime":3}'
 
 # 撤销删除
 curl -X POST https://your-domain.vercel.app/api/external/todo/undodelete \
   -H "Content-Type: application/json" \
-  -d '{"auth":{"username":"alice","password":"123456"},"todoId":1}'
+  -d '{"auth":{"token":"1_1dkxhiy"},"todoId":1}'
 
 # 标记完成
 curl -X POST https://your-domain.vercel.app/api/external/todo/complete \
   -H "Content-Type: application/json" \
-  -d '{"auth":{"username":"alice","password":"123456"},"todoId":1}'
+  -d '{"auth":{"token":"1_1dkxhiy"},"todoId":1}'
 
 # 获取待办列表（按类型筛选未完成）
 curl -X POST https://your-domain.vercel.app/api/external/todo/listTodoList \
   -H "Content-Type: application/json" \
-  -d '{"auth":{"username":"alice","password":"123456"},"filter":{"tag":"工作","completed":false}}'
+  -d '{"auth":{"token":"1_1dkxhiy"},"filter":{"tag":"工作","completed":false}}'
 
 # 获取单条详情
 curl -X POST https://your-domain.vercel.app/api/external/todo/getTodo \
   -H "Content-Type: application/json" \
-  -d '{"auth":{"username":"alice","password":"123456"},"todoId":1}'
+  -d '{"auth":{"token":"1_1dkxhiy"},"todoId":1}'
 
 # 查询状态 + 立即触发客户端弹窗提醒
 curl -X POST https://your-domain.vercel.app/api/external/todo/todoStatus \
   -H "Content-Type: application/json" \
-  -d '{"auth":{"username":"alice","password":"123456"},"todoId":1,"triggerNotice":true}'
+  -d '{"auth":{"token":"1_1dkxhiy"},"todoId":1,"triggerNotice":true}'
 
 # 修改待办字段
 curl -X POST https://your-domain.vercel.app/api/external/todo/updateTodo \
   -H "Content-Type: application/json" \
-  -d '{"auth":{"username":"alice","password":"123456"},"todoId":1,"update":{"priority":2,"tag":"紧急"}}'
+  -d '{"auth":{"token":"1_1dkxhiy"},"todoId":1,"update":{"priority":2,"tag":"紧急"}}'
 
 # 查询到期提醒
 curl -X POST https://your-domain.vercel.app/api/external/todo/notifications \
   -H "Content-Type: application/json" \
-  -d '{"auth":{"username":"alice","password":"123456"}}'
+  -d '{"auth":{"token":"1_1dkxhiy"}}'
 ```
 
 ---

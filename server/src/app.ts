@@ -7,6 +7,7 @@ import documentRoutes from './routes/documents'
 import mediaRoutes from './routes/media'
 import adminRoutes from './routes/admin'
 import externalRoutes from './routes/external'
+import apiTokenRoutes from './routes/apitoken'
 
 export function createApp() {
   const app = express()
@@ -21,6 +22,7 @@ export function createApp() {
   app.use('/api/media', mediaRoutes)
   app.use('/api/admin', adminRoutes)
   app.use('/api/external', externalRoutes)
+  app.use('/api/apitoken', apiTokenRoutes)
 
   // Serve built client in production (local server only, not Vercel)
   if (!process.env.VERCEL && process.env.NODE_ENV === 'production') {

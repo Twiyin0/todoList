@@ -9,6 +9,7 @@ const router = createRouter({
     { path: '/', component: () => import('@/views/Home.vue'), meta: { auth: true } },
     { path: '/editor', component: () => import('@/views/Editor.vue'), meta: { auth: true } },
     { path: '/editor/:id', component: () => import('@/views/Editor.vue'), meta: { auth: true } },
+    { path: '/apitoken', component: () => import('@/views/ApiToken.vue'), meta: { auth: true } },
     { path: '/admin', component: () => import('@/views/Admin.vue') },
     { path: '/:pathMatch(.*)*', redirect: '/' },
   ],

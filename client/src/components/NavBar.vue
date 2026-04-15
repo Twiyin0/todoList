@@ -6,6 +6,7 @@
     <div class="nav-right">
       <span class="username">{{ auth.user?.username }}</span>
       <router-link to="/editor" class="nav-btn">在线编辑</router-link>
+      <router-link to="/apitoken" class="nav-btn">API Token</router-link>
       <button class="nav-btn theme-btn" @click="themeStore.toggle()" :title="themeStore.theme === 'dark' ? '切换亮色' : '切换暗色'">
         {{ themeStore.theme === 'dark' ? '☀️' : '🌙' }}
       </button>

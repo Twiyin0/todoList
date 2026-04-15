@@ -43,6 +43,17 @@ export async function runMigrations(): Promise<void> {
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
       )`,
     },
+    {
+      sql: `CREATE TABLE IF NOT EXISTS api_tokens (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        token TEXT NOT NULL UNIQUE,
+        name TEXT NOT NULL DEFAULT '',
+        expires_at INTEGER,
+        created_at INTEGER NOT NULL,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      )`,
+    },
   ])
 
   // Add columns to existing tables (ignored if already exists)
