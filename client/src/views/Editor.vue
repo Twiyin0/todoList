@@ -137,11 +137,13 @@ const urlCopied = ref(false)
 
 let vditorInstance: Vditor | null = null
 let saveTimer: ReturnType<typeof setTimeout> | null = null
+let isLocalEditing = false  // true when user has unsaved local changes
 let pollTimer: ReturnType<typeof setInterval> | null = null
 let lastUpdatedAt = 0
 let ws: WebSocket | null = null
 let wsConnected = false
 let collabMode = 'polling'
+let lastCursorPos = { start: 0, end: 0, scrollTop: 0 }
 const collabEnabled = ref(localStorage.getItem('collabEnabled') !== 'false')
 
 function toggleCollab() {
@@ -211,7 +213,7 @@ function startSync(docId: number) {
     ws.onopen = () => { saveStatus.value = ''; wsConnected = true }
     ws.onmessage = (e) => {
       const msg = JSON.parse(e.data)
-      if (msg.type === 'update' && vditorInstance) {
+      if (msg.type === 'update' && vditorInstance && !isLocalEditing) {
         setValueKeepCursor(msg.content)
         lastUpdatedAt = Math.floor(Date.now() / 1000)
       } else if (msg.type === 'cursor' && msg.userId) {
@@ -256,24 +258,32 @@ function setValueKeepCursor(content: string) {
     vditorInstance!.setValue(content, true)
     return
   }
-  const start = ta.selectionStart
-  const end = ta.selectionEnd
-  const scrollTop = ta.scrollTop
+  const { start, end, scrollTop } = lastCursorPos
+  const preview = document.querySelector('#vditor .vditor-sv__preview') as HTMLElement
+  const previewScrollTop = preview?.scrollTop ?? 0
+
   const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value')?.set
   nativeInputValueSetter?.call(ta, content)
-  ta.dispatchEvent(new Event('input', { bubbles: true }))
+  // Do NOT dispatch input event — it triggers Vditor internal handling that resets cursor
   ta.selectionStart = Math.min(start, content.length)
   ta.selectionEnd = Math.min(end, content.length)
   ta.scrollTop = scrollTop
-  // Refresh preview panel without resetting cursor
   vditorInstance!.renderPreview(content)
+  nextTick(() => {
+    ta.selectionStart = Math.min(start, content.length)
+    ta.selectionEnd = Math.min(end, content.length)
+    ta.scrollTop = scrollTop
+    if (preview) preview.scrollTop = previewScrollTop
+  })
 }
 
 function startPolling(docId: number) {
   pollTimer = setInterval(async () => {
     try {
       const res = await documentApi.collabPoll(docId, lastUpdatedAt)
-      if (res.data.updated && vditorInstance) {
+      console.log('[poll]', { updated: res.data.updated, isLocalEditing, since: lastUpdatedAt, server_updated_at: res.data.updated_at })
+      if (res.data.updated && vditorInstance && !isLocalEditing) {
+        console.log('[poll] applying remote update')
         setValueKeepCursor(res.data.content)
         lastUpdatedAt = res.data.updated_at
       }
@@ -288,6 +298,7 @@ function stopSync() {
 }
 
 function initVditor(content: string) {
+  console.log('[initVditor] called')
   if (vditorInstance) { vditorInstance.destroy(); vditorInstance = null }
   if (!vditorEl.value) return
   const isDark = themeStore.theme === 'dark'
@@ -312,6 +323,16 @@ function initVditor(content: string) {
         editorEl.addEventListener('paste', handlePaste, true)
         editorEl.addEventListener('keyup', broadcastCursor)
         editorEl.addEventListener('click', broadcastCursor)
+      }
+      // Continuously track cursor so we can restore after remote updates
+      const ta = getTextarea()
+      if (ta) {
+        ta.addEventListener('selectionchange', () => {
+          lastCursorPos = { start: ta.selectionStart, end: ta.selectionEnd, scrollTop: ta.scrollTop }
+        })
+        ta.addEventListener('keyup', () => {
+          lastCursorPos = { start: ta.selectionStart, end: ta.selectionEnd, scrollTop: ta.scrollTop }
+        })
       }
     },
   })
@@ -366,12 +387,14 @@ function scheduleSave(content: string) {
     setTimeout(() => { saveStatus.value = '' }, 2000)
     return
   }
+  isLocalEditing = true
   if (saveTimer) clearTimeout(saveTimer)
   saveStatus.value = '编辑中...'
   saveTimer = setTimeout(async () => {
     if (!currentId.value) return
-    await docStore.saveDocument(currentId.value, { content })
-    lastUpdatedAt = Math.floor(Date.now() / 1000)
+    const saved = await docStore.saveDocument(currentId.value, { content })
+    lastUpdatedAt = saved.updated_at
+    isLocalEditing = false
     // Push via WebSocket if connected
     if (ws?.readyState === WebSocket.OPEN) {
       ws.send(JSON.stringify({ type: 'update', content }))

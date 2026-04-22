@@ -34,6 +34,7 @@ export const useDocumentStore = defineStore('document', () => {
     if (idx !== -1) documents.value[idx] = res.data.document
     const sidx = sharedDocuments.value.findIndex(d => d.id === id)
     if (sidx !== -1) sharedDocuments.value[sidx] = res.data.document
+    return res.data.document as { updated_at: number }
   }
 
   async function removeDocument(id: number) {
