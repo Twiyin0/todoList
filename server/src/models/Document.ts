@@ -127,6 +127,10 @@ export class Document {
     return true
   }
 
+  static async revokeInvite(id: number, ownerId: number): Promise<void> {
+    await DB.run('DELETE FROM doc_collaborators WHERE id = ? AND owner_id = ?', [id, ownerId])
+  }
+
   static async removeCollaborator(docId: number, ownerId: number, userId: number): Promise<void> {
     await DB.run(
       'DELETE FROM doc_collaborators WHERE doc_id = ? AND owner_id = ? AND user_id = ?',

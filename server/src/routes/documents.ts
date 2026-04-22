@@ -16,6 +16,7 @@ router.delete('/:id', DocumentController.remove)
 router.get('/:id/collab', CollabController.list)
 router.get('/:id/collab/poll', CollabController.poll)
 router.post('/:id/collab/invite', CollabController.invite)
+router.delete('/:id/collab/invite/:inviteId', CollabController.revokeInvite)
 router.delete('/:id/collab/:userId', CollabController.remove)
 
 export default router

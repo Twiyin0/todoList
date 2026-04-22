@@ -63,6 +63,8 @@ export const documentApi = {
   collabInvite: (id: number) => api.post(`/documents/${id}/collab/invite`),
   collabRemove: (id: number, userId: number) =>
     api.delete(`/documents/${id}/collab/${userId}`),
+  collabRevokeInvite: (id: number, inviteId: number) =>
+    api.delete(`/documents/${id}/collab/invite/${inviteId}`),
   collabPoll: (id: number, since: number) =>
     api.get(`/documents/${id}/collab/poll`, { params: { since } }),
   // Invite accept

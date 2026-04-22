@@ -72,6 +72,7 @@ vercel --prod             # deploy to Vercel
 | GET | `/:id/collab` | List collaborators (pending + accepted) |
 | GET | `/:id/collab/poll?since=` | Polling sync; returns `{updated, content, updated_at}` |
 | POST | `/:id/collab/invite` | Owner generates invite token |
+| DELETE | `/:id/collab/invite/:inviteId` | Owner revokes pending invite |
 | DELETE | `/:id/collab/:userId` | Owner removes accepted collaborator |
 
 ### Invite API (public + auth)
@@ -174,6 +175,8 @@ All routes use `POST` with `{"auth":{"token":"..."},...}` — no JWT required. T
 | WebSocket JWT secret | `websocket.ts` and `auth.ts` must use same fallback: `'vue-todo-secret-key-2024'` |
 | doc_collaborators user_id | No FK on user_id — nullable for pending invites; only set after accept |
 | SQLite schema changes | ALTER TABLE can't drop NOT NULL; drop+recreate table in migrations if needed |
+| Collab polling mode | Frontend skips WebSocket entirely in polling mode — no ws proxy errors |
+| Collaborator read-only | Non-owners with collab disabled cannot save (scheduleSave checks `isOwner \|\| collabEnabled`) |
 
 
 # VueTodoList Project Reference

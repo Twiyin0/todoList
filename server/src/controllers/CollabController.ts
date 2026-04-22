@@ -41,6 +41,17 @@ export class CollabController {
     res.json({ success: true, docId: invite.doc_id })
   }
 
+  /** DELETE /api/documents/:id/collab/invite/:inviteId — owner revokes pending invite */
+  static async revokeInvite(req: Request, res: Response): Promise<void> {
+    const ownerId = (req as any).user.userId
+    const docId = parseInt(req.params.id)
+    const inviteId = parseInt(req.params.inviteId)
+    const doc = await Document.findById(docId)
+    if (!doc || doc.user_id !== ownerId) { res.status(403).json({ error: 'Forbidden' }); return }
+    await Document.revokeInvite(inviteId, ownerId)
+    res.json({ success: true })
+  }
+
   /** DELETE /api/documents/:id/collab/:userId — owner removes collaborator */
   static async remove(req: Request, res: Response): Promise<void> {
     const ownerId = (req as any).user.userId

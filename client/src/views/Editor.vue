@@ -196,7 +196,14 @@ async function loadDoc(id: number) {
 function startSync(docId: number) {
   if (collabMode === 'disabled' || !collabEnabled.value) return
   const token = localStorage.getItem('token')
-  // Try WebSocket first
+
+  // polling mode: skip WebSocket entirely
+  if (collabMode === 'polling') {
+    startPolling(docId)
+    return
+  }
+
+  // websocket mode
   const wsProto = location.protocol === 'https:' ? 'wss' : 'ws'
   const wsUrl = `${wsProto}://${location.host}/ws?token=${token}&docId=${docId}`
   try {
@@ -353,6 +360,12 @@ function broadcastCursor() {
 }
 
 function scheduleSave(content: string) {
+  // Collaborators (non-owners) can only save when collab is enabled
+  if (!isOwner.value && !collabEnabled.value) {
+    saveStatus.value = '协同已关闭，只读'
+    setTimeout(() => { saveStatus.value = '' }, 2000)
+    return
+  }
   if (saveTimer) clearTimeout(saveTimer)
   saveStatus.value = '编辑中...'
   saveTimer = setTimeout(async () => {
@@ -425,8 +438,8 @@ async function handleRemoveCollab(userId: number) {
 }
 
 async function handleRemoveInvite(id: number) {
-  // Remove by collab record id — reuse remove endpoint with userId=0 won't work,
-  // so just refresh the list after deleting via a direct approach
+  if (!currentId.value) return
+  await documentApi.collabRevokeInvite(currentId.value, id)
   collaborators.value = collaborators.value.filter(c => c.id !== id)
 }
 
