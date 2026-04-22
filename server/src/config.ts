@@ -9,6 +9,7 @@ export interface AppConfig {
   adminPassword: string
   mediaPath: string
   uploadFileSizeMax: number
+  collabMode: 'polling' | 'websocket' | 'disabled'
 }
 
 const DEFAULT_CONFIG: AppConfig = {
@@ -18,6 +19,7 @@ const DEFAULT_CONFIG: AppConfig = {
   adminPassword: '202cb962ac59075b964b07152d234b70',
   mediaPath: './media',
   uploadFileSizeMax: 15,
+  collabMode: 'polling',
 }
 
 function resolveMediaPath(mediaPath: string, configDir: string): string {

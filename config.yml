@@ -4,3 +4,4 @@ devPort: 3300
 adminPassword: DC647EB65E6711E155375218212B3964
 mediaPath: ./media
 uploadFileSizeMax: 15
+collabMode: websocket  # polling | websocket | disabled

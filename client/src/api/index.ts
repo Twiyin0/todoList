@@ -58,6 +58,16 @@ export const documentApi = {
   update: (id: number, data: { title?: string; content?: string }) =>
     api.put(`/documents/${id}`, data),
   remove: (id: number) => api.delete(`/documents/${id}`),
+  // Collab
+  collabList: (id: number) => api.get(`/documents/${id}/collab`),
+  collabInvite: (id: number) => api.post(`/documents/${id}/collab/invite`),
+  collabRemove: (id: number, userId: number) =>
+    api.delete(`/documents/${id}/collab/${userId}`),
+  collabPoll: (id: number, since: number) =>
+    api.get(`/documents/${id}/collab/poll`, { params: { since } }),
+  // Invite accept
+  getInvite: (token: string) => api.get(`/collab/invite/${token}`),
+  acceptInvite: (token: string) => api.post(`/collab/invite/${token}/accept`),
 }
 
 export const mediaApi = {
@@ -66,6 +76,10 @@ export const mediaApi = {
     form.append('file', file)
     return api.post('/media/upload', form, { headers: { 'Content-Type': 'multipart/form-data' } })
   },
+}
+
+export const configApi = {
+  get: () => api.get('/config'),
 }
 
 export const apiTokenApi = {

@@ -54,6 +54,19 @@ export async function runMigrations(): Promise<void> {
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
       )`,
     },
+    {
+      sql: `CREATE TABLE IF NOT EXISTS doc_collaborators (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        doc_id INTEGER NOT NULL,
+        owner_id INTEGER NOT NULL,
+        user_id INTEGER,
+        invite_token TEXT NOT NULL UNIQUE,
+        status TEXT NOT NULL DEFAULT 'pending',
+        created_at INTEGER NOT NULL,
+        FOREIGN KEY (doc_id) REFERENCES documents(id) ON DELETE CASCADE,
+        FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE
+      )`,
+    },
   ])
 
   // Add columns to existing tables (ignored if already exists)
@@ -67,7 +80,33 @@ export async function runMigrations(): Promise<void> {
     'ALTER TABLE todos ADD COLUMN notice_time INTEGER',
     'ALTER TABLE todos ADD COLUMN deleted_at INTEGER',
     'ALTER TABLE todos ADD COLUMN undo_keep_days INTEGER NOT NULL DEFAULT 7',
+    // Rebuild doc_collaborators to support invite flow (drop old NOT NULL constraint on user_id)
+    'ALTER TABLE doc_collaborators RENAME TO doc_collaborators_old',
   ]) {
     try { await DB.run(sql) } catch { /* column already exists */ }
   }
+
+  // Recreate doc_collaborators with nullable user_id if old table was renamed
+  try {
+    await DB.run(`CREATE TABLE IF NOT EXISTS doc_collaborators (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      doc_id INTEGER NOT NULL,
+      owner_id INTEGER NOT NULL,
+      user_id INTEGER,
+      invite_token TEXT NOT NULL DEFAULT '',
+      status TEXT NOT NULL DEFAULT 'pending',
+      created_at INTEGER NOT NULL,
+      FOREIGN KEY (doc_id) REFERENCES documents(id) ON DELETE CASCADE,
+      FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    )`)
+    // Migrate accepted rows from old table
+    await DB.run(`INSERT OR IGNORE INTO doc_collaborators (id, doc_id, owner_id, user_id, invite_token, status, created_at)
+      SELECT id, doc_id, owner_id, user_id,
+        COALESCE(invite_token, ''),
+        COALESCE(status, 'accepted'),
+        created_at
+      FROM doc_collaborators_old`)
+    await DB.run('DROP TABLE IF EXISTS doc_collaborators_old')
+  } catch { /* already done */ }
 }

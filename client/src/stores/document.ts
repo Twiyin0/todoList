@@ -5,17 +5,19 @@ import { documentApi } from '@/api'
 
 export const useDocumentStore = defineStore('document', () => {
   const documents = ref<Document[]>([])
+  const sharedDocuments = ref<Document[]>([])
   const current = ref<Document | null>(null)
 
   async function fetchDocuments() {
     const res = await documentApi.list()
     documents.value = res.data.documents
+    sharedDocuments.value = res.data.sharedDocuments ?? []
   }
 
   async function fetchDocument(id: number) {
     const res = await documentApi.get(id)
     current.value = res.data.document
-    return current.value
+    return { doc: current.value, isOwner: res.data.isOwner as boolean, collaborators: res.data.collaborators ?? [] }
   }
 
   async function createDocument(title = 'Untitled', content = '') {
@@ -30,6 +32,8 @@ export const useDocumentStore = defineStore('document', () => {
     current.value = res.data.document
     const idx = documents.value.findIndex(d => d.id === id)
     if (idx !== -1) documents.value[idx] = res.data.document
+    const sidx = sharedDocuments.value.findIndex(d => d.id === id)
+    if (sidx !== -1) sharedDocuments.value[sidx] = res.data.document
   }
 
   async function removeDocument(id: number) {
@@ -38,5 +42,5 @@ export const useDocumentStore = defineStore('document', () => {
     if (current.value?.id === id) current.value = null
   }
 
-  return { documents, current, fetchDocuments, fetchDocument, createDocument, saveDocument, removeDocument }
+  return { documents, sharedDocuments, current, fetchDocuments, fetchDocument, createDocument, saveDocument, removeDocument }
 })

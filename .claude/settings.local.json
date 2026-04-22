@@ -3,7 +3,10 @@
     "allow": [
       "Bash(yarn vue-tsc:*)",
       "Bash(node -e \"console.log\\(require\\('./node_modules/typescript/package.json'\\).version\\)\")",
-      "Bash(curl -s -X POST http://localhost:3300/api/external/todo/listTodoList -H 'Content-Type: application/json' -d '{\"auth\":{\"token\":\"1_tdivwe\"}}')"
+      "Bash(curl -s -X POST http://localhost:3300/api/external/todo/listTodoList -H 'Content-Type: application/json' -d '{\"auth\":{\"token\":\"1_tdivwe\"}}')",
+      "Bash(yarn build:*)",
+      "WebSearch",
+      "WebFetch(domain:www.npmjs.com)"
     ]
   }
 }
